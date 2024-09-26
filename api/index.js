@@ -1,8 +1,14 @@
+require("dotenv").config();
+
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
 const pathToFfmpeg = require("ffmpeg-static");
+const express = require("express");
+const app = express();
+
+app.use(express.json());
 
 async function generateVideo(
   orderedPointerFileIndex,
@@ -52,7 +58,7 @@ async function generateVideo(
   });
 }
 
-async function generateAllVideos(userId, projectId) {
+async function generateAllVideos(userId, projectId, res) {
   ffmpeg.setFfmpegPath(pathToFfmpeg);
 
   const modifiedDir = path.dirname(__dirname);
@@ -60,7 +66,7 @@ async function generateAllVideos(userId, projectId) {
   const videosDirectoryPath = path.join(projectDirectoryPath, "videos");
 
   const finalVideoPath = path.join(projectDirectoryPath, "result.mp4");
-  if(fs.existsSync(finalVideoPath)) fs.unlinkSync(finalVideoPath);
+  if (fs.existsSync(finalVideoPath)) fs.unlinkSync(finalVideoPath);
 
   const orderedPointers = [
     {
@@ -128,6 +134,7 @@ async function generateAllVideos(userId, projectId) {
       (err) => {
         if (err) {
           console.log("Error writing the file concatList.txt");
+          res.status(500).json({ message: "Something went wrong" })
           return;
         }
 
@@ -140,10 +147,12 @@ async function generateAllVideos(userId, projectId) {
             fs.rmSync(videosDirectoryPath, { recursive: true });
             if (error) {
               console.log(`error: ${error.message}`);
+              res.status(500).json({ message: "Something went wrong" })
               return;
             }
             if (stderr) {
               console.log(`stderr: ${stderr}`);
+              res.sendFile(finalVideoPath);
               return;
             }
             console.log(`stdout: ${stdout}`);
@@ -155,4 +164,16 @@ async function generateAllVideos(userId, projectId) {
   });
 }
 
-generateAllVideos("66daa8d4d8b81a7d2e7d3cd4", "66ea9d2cd3b6c2c6fefa63be");
+app.get("/test", (req, res) => {
+  res.send("this is a test endpoint");
+});
+
+app.get("/merge", async (req, res) => {
+  const userId = "66daa8d4d8b81a7d2e7d3cd4";
+  const projectId = "66ea9d2cd3b6c2c6fefa63be";
+
+  generateAllVideos(userId, projectId, res);
+});
+
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`server running at port ${port}`));
