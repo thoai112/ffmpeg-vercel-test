@@ -2,7 +2,6 @@ const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const path = require("path");
 const { exec } = require("child_process");
-const prisma = require("../libs/prisma");
 const pathToFfmpeg = require("ffmpeg-static");
 
 async function generateVideo(
@@ -53,52 +52,38 @@ async function generateVideo(
   });
 }
 
-async function generateAllVideos(userId, projectId, res) {
+async function generateAllVideos(userId, projectId) {
   ffmpeg.setFfmpegPath(pathToFfmpeg);
-
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      authorId: userId,
-    },
-    select: {
-      pointerSequence: true,
-    },
-  });
-
-  const pointers = await prisma.pointer.findMany({
-    where: {
-      projectId,
-    },
-    select: {
-      id: true,
-      imageName: true,
-      audioName: true,
-    },
-  });
-
-  let unavailableVideoInputs = false;
-  for (let pointer of pointers) {
-    if (pointer.imageName.length === 0 || pointer.audioName.length === 0) {
-      unavailableVideoInputs = true;
-      break;
-    }
-  }
-
-  if (unavailableVideoInputs) {
-    res.sendStatus(400);
-    return;
-  }
-
-  const orderedPointers = [];
-  project.pointerSequence.forEach((pointerId) => {
-    const currentPointer = pointers.find((pointer) => pointer.id === pointerId);
-    if (currentPointer) orderedPointers.push(currentPointer);
-  });
 
   const modifiedDir = path.dirname(__dirname);
   const projectDirectoryPath = path.join(modifiedDir, userId, projectId);
   const videosDirectoryPath = path.join(projectDirectoryPath, "videos");
+
+  const finalVideoPath = path.join(projectDirectoryPath, "result.mp4");
+  if(fs.existsSync(finalVideoPath)) fs.unlinkSync(finalVideoPath);
+
+  const orderedPointers = [
+    {
+      imageName: "image-1.jpeg",
+      audioName: "audio-1.mp3",
+    },
+    {
+      imageName: "image-2.jpeg",
+      audioName: "audio-2.mp3",
+    },
+    {
+      imageName: "image-3.jpeg",
+      audioName: "audio-3.mp3",
+    },
+    {
+      imageName: "image-4.jpeg",
+      audioName: "audio-4.mp3",
+    },
+    {
+      imageName: "image-5.jpeg",
+      audioName: "audio-5.mp3",
+    },
+  ];
 
   Promise.all(
     orderedPointers.map((orderedPointer) => {
@@ -159,12 +144,10 @@ async function generateAllVideos(userId, projectId, res) {
             }
             if (stderr) {
               console.log(`stderr: ${stderr}`);
-              res.status(200).sendFile(outputVideoPath);
               return;
             }
             console.log(`stdout: ${stdout}`);
             console.log("Output video generated successfully");
-            res.status(200).sendFile(outputVideoPath);
           },
         );
       },
@@ -172,4 +155,4 @@ async function generateAllVideos(userId, projectId, res) {
   });
 }
 
-generateAllVideos
+generateAllVideos("66daa8d4d8b81a7d2e7d3cd4", "66ea9d2cd3b6c2c6fefa63be");
