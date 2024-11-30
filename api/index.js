@@ -10,7 +10,7 @@ const app = express();
 var pathToGo2rtc = require("go2rtc-static");
 
 
-const process = spawn(pathToGo2rtc);
+const process = exec(pathToGo2rtc);
 app.use(express.json());
 
 async function generateVideo(
