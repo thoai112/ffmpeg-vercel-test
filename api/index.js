@@ -3,11 +3,14 @@ require("dotenv").config();
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const path = require("path");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const pathToFfmpeg = require("ffmpeg-static");
 const express = require("express");
 const app = express();
+var pathToGo2rtc = require("go2rtc-static");
 
+
+const process = spawn(pathToGo2rtc);
 app.use(express.json());
 
 async function generateVideo(
@@ -175,5 +178,18 @@ app.get("/merge", async (req, res) => {
   generateAllVideos(userId, projectId, res);
 });
 
+
+process.stdout.on('data', (data) => {
+  console.log(`stdout: ${data}`);
+});
+
+process.stderr.on('data', (data) => {
+  console.error(`stderr: ${data}`);
+});
+
+process.on('close', (code) => {
+  console.log(`child process exited with code   
+ ${code}`);
+});
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`server running at port ${port}`));
