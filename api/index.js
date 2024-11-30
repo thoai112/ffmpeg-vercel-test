@@ -10,7 +10,7 @@ const app = express();
 var pathToGo2rtc = require("go2rtc-static");
 
 
-const process = exec(pathToGo2rtc);
+const processxx = exec(pathToGo2rtc);
 app.use(express.json());
 
 async function generateVideo(
@@ -179,17 +179,16 @@ app.get("/merge", async (req, res) => {
 });
 
 
-process.stdout.on('data', (data) => {
+processxx.stdout.on('data', (data) => {
   console.log(`stdout: ${data}`);
 });
 
-process.stderr.on('data', (data) => {
+processxx.stderr.on('data', (data) => {
   console.error(`stderr: ${data}`);
 });
 
-process.on('close', (code) => {
-  console.log(`child process exited with code   
- ${code}`);
+processxx.on('close', (code) => {
+  console.log(`child process exited with code ${code}`);
 });
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`server running at port ${port}`));
